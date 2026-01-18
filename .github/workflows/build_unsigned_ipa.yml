@@ -12,13 +12,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode_16.app
+      - name: Select latest Xcode
+        run: |
+          # Listet alle Versionen auf und wählt die höchste
+          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+          echo "Using $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+          
+      - name: Verify Swift Version
+        run: swift --version # Hier sollte nun 6.2.0 oder höher erscheinen
 
       - name: Resolve Swift Packages
         run: xcodebuild -resolvePackageDependencies -workspace Alidade.xcworkspace -scheme Alidade
 
-      # SCHRITT: Bauen ohne Signierung
       - name: Build App Bundle (Unsigned)
         run: |
           xcodebuild build \
@@ -33,7 +39,6 @@ jobs:
             CODE_SIGN_ENTITLEMENTS="" \
             CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO
 
-      # SCHRITT: IPA Struktur erstellen (Payload/Alidade.app)
       - name: Create IPA
         run: |
           mkdir -p Payload
