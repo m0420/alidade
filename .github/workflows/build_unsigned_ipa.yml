@@ -24,6 +24,9 @@ jobs:
 
       - name: Resolve Swift Packages
         run: xcodebuild -resolvePackageDependencies -workspace Alidade.xcworkspace -scheme Alidade
+        
+      - name: Install Dependencies
+        run: brew install libadwaita libshumate
 
       - name: Build App Bundle (Unsigned)
         run: |
@@ -33,6 +36,8 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -derivedDataPath build \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
