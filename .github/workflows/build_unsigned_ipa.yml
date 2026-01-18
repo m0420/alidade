@@ -1,0 +1,49 @@
+name: Build Unsigned Alidade IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Resolve Swift Packages
+        run: xcodebuild -resolvePackageDependencies -workspace Alidade.xcworkspace -scheme Alidade
+
+      # SCHRITT: Bauen ohne Signierung
+      - name: Build App Bundle (Unsigned)
+        run: |
+          xcodebuild build \
+            -workspace Alidade.xcworkspace \
+            -scheme Alidade \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            CODE_SIGNING_INJECT_BASE_ENTITLEMENTS=NO
+
+      # SCHRITT: IPA Struktur erstellen (Payload/Alidade.app)
+      - name: Create IPA
+        run: |
+          mkdir -p Payload
+          # Suche die .app Datei im build-Ordner und kopiere sie
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          # Zippen und in .ipa umbenennen
+          zip -r Alidade_Unsigned.ipa Payload
+          
+      - name: Upload Unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: Alidade-Unsigned-IPA
+          path: Alidade_Unsigned.ipa
